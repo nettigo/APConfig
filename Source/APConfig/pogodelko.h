@@ -125,15 +125,18 @@ void postFloatValue (float measurement, int digits, String sensorId) {
     Serial.println("connected!");
     Serial.println("-------------------------------------");
     //HTTP Header aufbauen
-    client.print("POST /boxes/"); client.print(config.opensense); client.print("/"); client.print(sensorId); client.println(" HTTP/1.1");
-    client.print("Host:");
-    client.println(server);
-    client.println("Content-Type: application/json");
-    client.println("Connection: close");
-    client.print("Content-Length: "); client.println(jsonValue.length());
-    client.println();
+    sendData.concat("POST /boxes/"); sendData.concat(config.opensense); sendData.concat("/"); sendData.concat(sensorId); sendData.concat(" HTTP/1.1");sendData.concat("\n");
+    sendData.concat("Host:");
+    sendData.concat(server);sendData.concat("\n");
+    sendData.concat("Content-Type: application/json");sendData.concat("\n");
+    sendData.concat("Connection: close");sendData.concat("\n");
+    sendData.concat("Content-Length: "); sendData.concat(jsonValue.length());sendData.concat("\n");
+    sendData.concat("\n");
     //Daten senden
-    client.println(jsonValue);
+    sendData.concat(jsonValue);
+    sendData.concat("\n");
+    Serial.print(sendData);
+    client.print(sendData);
   } else {
     Serial.println("failed!");
     Serial.println("-------------------------------------");
@@ -146,7 +149,7 @@ void postFloatValue (float measurement, int digits, String sensorId) {
 
 
 unsigned long lastSent = 0;
-unsigned long senseInterval = 10*1000;
+unsigned long senseInterval = 120*1000;
 
 void pogoRun() {
   Serial.print("Temperature = ");

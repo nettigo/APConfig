@@ -28,6 +28,7 @@ void setup() {
   if (checkResetFlag()) {
     //Do the firmware reset here
     Serial.printf("Reset Firmware\n");
+    config.config_mode=1;
 
     //Set the ssid to default value and turn off the password
     WiFi.softAP("APConfig", "", 1, false, 1);
