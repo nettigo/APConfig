@@ -66,7 +66,6 @@ void serveAdmin(ESP8266WebServer *webServer) {
       webServer->arg("newpassword").toCharArray(config.pass, sizeof(config.pass));
     webServer->arg("newpassword").toCharArray(config.pass, sizeof(config.pass));
 
-    config.config_mode = false;
     // Store the new settings to EEPROM
     SaveConfig();
     PrintConfig();

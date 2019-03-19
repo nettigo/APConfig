@@ -13,7 +13,7 @@
 #define PASS_DEFAULT "password"
 
 // Define a structure to hold all the variables that are going to be stored in EEPROM
-struct config_t {
+struct config_t{
   char ssid[MAX_STR_LEN] = SSID_DEFAULT;
   char pass[MAX_STR_LEN] = PASS_DEFAULT;
   char opensense[MAX_STR_LEN] = "";
@@ -35,7 +35,7 @@ void SaveConfig() {
 #endif
 
   // Store the new settings to EEPROM
-  EEPROM_writeAnything(0,  config);
+  EEPROM_writeAnything(0,  config);    
   EEPROM.commit();
 }
 
@@ -44,41 +44,41 @@ void ResetConfig() {
 #ifdef USESERIAL
   Serial.printf("Reset Config\n");
 #endif
-
+  
   // If the EEROM isn't valid then create a unique name for the wifi
   sprintf(config.ssid, "%s %06X", SSID_DEFAULT, ESP.getChipId());
   sprintf(config.pass, PASS_DEFAULT);
   config.config_mode = true;
-  config.opensense[0] = 0;
-  config.sensorID1[0] = 0;
-  config.sensorID2[0] = 0;
-  config.sensorID3[0] = 0;
+  config.opensense[0]=0;
+  config.sensorID1[0]=0;
+  config.sensorID2[0]=0;
+  config.sensorID3[0]=0;
   SaveConfig();
 }
 
 // Checks all of the bytes in the string array to make sure they are valid characters
 bool ValidateString(char* value) {
   bool valid = true;
-
+  
   //Check to see if the string is an acceptable length
-  if ((strlen(value) < MIN_STR_LEN) || (strlen(value) >= MAX_STR_LEN)) {
+  if((strlen(value) < MIN_STR_LEN) && (strlen(value) >= MAX_STR_LEN)) {
     valid = false;
   }
   else {
     //Check each character in the string to make sure it is alphanumeric or space
-    //    for(uint8_t i = 0; i < strlen(value); i++)
-    //      if(!isAlphaNumeric(value[i]))
-    //        if(!isSpace(value[i]))
-    //          valid = false;
+    for(uint8_t i = 0; i < strlen(value); i++)
+      if(!isAlphaNumeric(value[i]))
+        if(!isSpace(value[i]))
+          valid = false;
   }
-
+  
   return valid;
 }
 
 // Loads the config values from EEPROM, leaves the default values if the EEPROM hasn't been set yet
 void LoadConfig() {
   bool eepromValid = true;
-
+  
   // Load the config variables from EEPROM
   config_t eepromConfig;
   EEPROM_readAnything(0, eepromConfig);
@@ -86,17 +86,11 @@ void LoadConfig() {
   //Check to see if the config variables loaded from eeprom are valid
   eepromValid &= ValidateString(eepromConfig.ssid);
   eepromValid &= ValidateString(eepromConfig.pass);
-  Serial.print("Config valid? ");
-  Serial.println(eepromValid);
-  if (eepromValid) {
+
+  if(eepromValid) {
     strcpy(config.ssid, eepromConfig.ssid);
     strcpy(config.pass, eepromConfig.pass);
-    strcpy(config.opensense, eepromConfig.opensense);
-    strcpy(config.sensorID1, eepromConfig.sensorID1);
-    strcpy(config.sensorID2, eepromConfig.sensorID2);
-    strcpy(config.sensorID3, eepromConfig.sensorID3);
-    config.config_mode = eepromConfig.config_mode;
-  }
+  }  
   else {
     // If the EEROM isn't valid then create a unique name for the wifi
     ResetConfig();
@@ -108,8 +102,7 @@ void LoadConfig() {
 // Sends a copy of the config values out to the serial port
 void PrintConfig() {
 #ifdef USESERIAL
-  Serial.printf("Config mode: %d\n", config.config_mode);
-  Serial.printf("SSID: '%s'\n", config.ssid);
+  Serial.printf("SSID: '%s'\n", config.ssid);  
   Serial.printf("Pass: '%s'\n", config.pass);
   Serial.printf("SenseBOx ID: '%s'\n", config.opensense);
   Serial.printf("Sensor 1 ID: '%s'\n", config.sensorID1);

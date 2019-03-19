@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include "pogodelko.h"
 
 #define USESERIAL
 #define USELED
@@ -7,10 +8,9 @@
 #include "Config.h"
 #include "FirmwareReset.h"
 #include "AdminPage.h"
-#include "pogodelko.h"
-
 
 ESP8266WebServer webServer(80);
+bool config_mode = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -61,15 +61,12 @@ void setup() {
       webServer.handleClient();
       yield();
     }
-  } else {
-    setupPogo();
   }
 }
 
 
 void loop() {
   // put your main code here, to run repeatedly:
-  pogoRun();
 
 }
 
