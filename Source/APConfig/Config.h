@@ -10,7 +10,7 @@
 #define MAX_STR_LEN 26
 
 #define SSID_DEFAULT "APConfig"
-#define PASS_DEFAULT "password"
+#define PASS_DEFAULT "pogodelko"
 
 // Define a structure to hold all the variables that are going to be stored in EEPROM
 struct config_t {

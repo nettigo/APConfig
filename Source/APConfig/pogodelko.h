@@ -9,7 +9,7 @@
 #include <ESP8266HTTPClient.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
-//#include <Adafruit_BME280.h>
+#include <Adafruit_BME280.h>
 #include <time.h>
 
 
@@ -20,8 +20,11 @@
 #define BMP_CS D4
 
 //Adafruit_BMP280 bme; // I2C
+#ifndef BME
 Adafruit_BMP280 bme(BMP_CS); // hardware SPI
-//Adafruit_BME280 bme(BMP_CS); // hardware SPI
+#else
+Adafruit_BME280 bme(BMP_CS); // hardware SPI
+#endif
 //Adafruit_BMP280 bme(BMP_CS, BMP_MOSI, BMP_MISO,  BMP_SCK);
 #include <LiquidCrystal_PCF8574.h>
 
@@ -51,10 +54,9 @@ void setClock() {
   Serial.print(asctime(&timeinfo));
 }
 
-void setupPogo() {
+void initLCD() {
   byte error;
-  setClock();
-  Wire.begin();
+
   Wire.beginTransmission(0x27);
   error = Wire.endTransmission();
   if ( error == 0) {
@@ -65,15 +67,20 @@ void setupPogo() {
     lcd = lcd2;
     Serial.println("Jest LCD na adresie 0x3F?");
   }
-  Serial.println(F("BMP280 test"));
-  delay(100);
   lcd.begin(16, 2); // initialize the lcd
   lcd.setBacklight(1);
+  
+}
 
+void setupPogo() {
+  setClock();
+  Serial.println(F("BMP280 test"));
+  delay(100);
+  lcd.clear();
   if (!bme.begin()) {
-    Serial.println("Could not find a valid BMP280 sensor, check wiring!");
+    Serial.println(F("Could not find a valid BMP/E280 sensor, check wiring!"));
     delay(1);
-    lcd.print("Brak BMP280");
+    lcd.print("Brak BMP/E280");
     while (1) {
       delay(1000);
       Serial.println("TICK");
@@ -89,6 +96,7 @@ void waitForServerResponse () {
   //Ankommende Bytes ausgeben
   boolean repeat = true;
   do {
+    yield();
     if (client.available()) {
       char c = client.read();
       Serial.print(c);
@@ -109,33 +117,40 @@ void waitForServerResponse () {
 void postFloatValue (float measurement, int digits, String sensorId) {
   //Float zu String konvertieren
   char obs[10];
+  Serial.println("postFloatValue");
+  Serial.println(sensorId);
+  if (sensorId.length() < 10) {
+    Serial.println("SensorID too short?");
+    return;
+  }
   dtostrf(measurement, 5, digits, obs);
   //Json erstellen
-  String jsonValue = "{\"value\":";
+  String jsonValue = " {\"value\":";
   jsonValue += obs;
   jsonValue += "}";
-    client.setInsecure();
+  client.setInsecure();
 
   //Mit OSeM Server verbinden und POST Operation durchführen
   Serial.println("-------------------------------------");
   Serial.print("Connectingto OSeM Server...");
-  Serial.println(jsonValue);
   String sendData("");
   if (client.connect(server, 443)) {
     Serial.println("connected!");
     Serial.println("-------------------------------------");
     //HTTP Header aufbauen
-    sendData.concat("POST /boxes/"); sendData.concat(config.opensense); sendData.concat("/"); sendData.concat(sensorId); sendData.concat(" HTTP/1.1");sendData.concat("\n");
+    sendData.concat("POST /boxes/"); sendData.concat(config.opensense); sendData.concat("/"); sendData.concat(sensorId); sendData.concat(" HTTP/1.1"); sendData.concat("\n");
     sendData.concat("Host:");
-    sendData.concat(server);sendData.concat("\n");
-    sendData.concat("Content-Type: application/json");sendData.concat("\n");
-    sendData.concat("Connection: close");sendData.concat("\n");
-    sendData.concat("Content-Length: "); sendData.concat(jsonValue.length());sendData.concat("\n");
+    sendData.concat(server); sendData.concat("\n");
+    sendData.concat("Content-Type: application/json"); sendData.concat("\n");
+    sendData.concat("Connection: close"); sendData.concat("\n");
+    sendData.concat("Content-Length: "); sendData.concat(jsonValue.length()); sendData.concat("\n");
     sendData.concat("\n");
     //Daten senden
     sendData.concat(jsonValue);
     sendData.concat("\n");
+#ifdef DEBUG
     Serial.print(sendData);
+#endif
     client.print(sendData);
   } else {
     Serial.println("failed!");
@@ -146,10 +161,19 @@ void postFloatValue (float measurement, int digits, String sensorId) {
 }
 
 
+void displayIP(void) {
+  lcd.clear();
+  lcd.print("SSID:");
+  lcd.print(config.ssid);
+  lcd.setCursor(0, 1);
+  lcd.print(WiFi.localIP());
+  delay(3000);
+  lcd.clear();
+}
 
 
 unsigned long lastSent = 0;
-unsigned long senseInterval = 120*1000;
+unsigned long senseInterval = 120 * 1000;
 
 void pogoRun() {
   Serial.print("Temperature = ");
@@ -158,6 +182,13 @@ void pogoRun() {
   lcd.setCursor(0, 0);
   lcd.print(bme.readTemperature());
   lcd.print(" C     ");
+#ifdef BME
+  lcd.setCursor(8, 0);
+  lcd.print(bme.readHumidity());
+  lcd.print(" %    ");
+  Serial.printf("Humidity: %.2f %%\n", bme.readHumidity());
+
+#endif
   Serial.print("Pressure = ");
   Serial.print(bme.readPressure());
   Serial.println(" Pa");
@@ -169,11 +200,13 @@ void pogoRun() {
   Serial.println(" m");
 
   Serial.println();
-  if (millis()-lastSent > senseInterval ) {
+  if (strlen(config.opensense ) > 10 && millis() - lastSent > senseInterval ) {
     postFloatValue (bme.readTemperature(), 2, config.sensorID1) ;
     postFloatValue (bme.readPressure(), 2, config.sensorID2) ;
-      
-    lastSent=millis();
+#ifdef BME
+    postFloatValue (bme.readHumidity(), 2, config.sensorID3) ;
+#endif
+    lastSent = millis();
   }
   delay(2000);
 }

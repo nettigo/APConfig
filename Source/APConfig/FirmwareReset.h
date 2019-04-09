@@ -9,8 +9,8 @@
 #define FLAGSET     0x55555555
 #define FLAGCLEAR   0xAAAAAAAA
 #define FLAGADDRESS 00
-#define SETTIMEOUT 3
-#define CLEARTIMEOUT 2
+#define SETTIMEOUT 1
+#define CLEARTIMEOUT 4
 
 Ticker ticker;
 bool booted = false;
